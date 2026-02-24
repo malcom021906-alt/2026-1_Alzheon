@@ -9,6 +9,7 @@ import * as authController from '../controllers/authController.js';
 import * as pacienteController from '../controllers/pacienteController.js';
 import * as cuidadorController from '../controllers/cuidadorController.js';
 import * as medicoController from '../controllers/medicoController.js';
+import * as musicaController from '../controllers/musicaController.js';
 import { authMiddleware, requireRole } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -22,7 +23,7 @@ const __dirname = path.dirname(__filename);
 const storage = multer.memoryStorage();
 
 // Multer para audios
-const uploadAudio = multer({ 
+const uploadAudio = multer({
     storage,
     limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
     fileFilter: (req, file, cb) => {
@@ -89,7 +90,7 @@ router.get('/usuarios/:id', authMiddleware, async (req, res) => {
             .populate('pacienteAsociado', 'nombre email')
             .populate('cuidadores', 'nombre email')
             .populate('pacientesAsignados', 'nombre email');
-        
+
         if (!usuario) {
             return res.status(404).json({ error: 'Usuario no encontrado' });
         }
@@ -107,7 +108,7 @@ router.put('/usuarios/:id', authMiddleware, async (req, res) => {
             req.body,
             { new: true, runValidators: true }
         ).select('-password');
-        
+
         if (!usuario) {
             return res.status(404).json({ error: 'Usuario no encontrado' });
         }
@@ -121,11 +122,11 @@ router.put('/usuarios/:id', authMiddleware, async (req, res) => {
 router.delete('/usuarios/:id', authMiddleware, async (req, res) => {
     try {
         const usuario = await Usuario.findById(req.params.id);
-        
+
         if (!usuario) {
             return res.status(404).json({ error: 'Usuario no encontrado' });
         }
-        
+
         // Limpiar relaciones antes de eliminar
         if (usuario.rol === 'cuidador/familiar' && usuario.pacienteAsociado) {
             await Usuario.findByIdAndUpdate(
@@ -133,7 +134,7 @@ router.delete('/usuarios/:id', authMiddleware, async (req, res) => {
                 { $pull: { cuidadores: usuario._id } }
             );
         }
-        
+
         if (usuario.rol === 'paciente') {
             // Eliminar referencia de cuidadores
             await Usuario.updateMany(
@@ -141,7 +142,7 @@ router.delete('/usuarios/:id', authMiddleware, async (req, res) => {
                 { $unset: { pacienteAsociado: 1 } }
             );
         }
-        
+
         await Usuario.findByIdAndDelete(req.params.id);
         res.json({ message: 'Usuario eliminado correctamente' });
     } catch (error) {
@@ -156,25 +157,25 @@ router.post('/usuarios/:pacienteId/cuidadores/:cuidadorId', authMiddleware, asyn
     try {
         const paciente = await Usuario.findById(req.params.pacienteId);
         const cuidador = await Usuario.findById(req.params.cuidadorId);
-        
+
         if (!paciente || paciente.rol !== 'paciente') {
             return res.status(404).json({ error: 'Paciente no encontrado' });
         }
-        
+
         if (!cuidador || cuidador.rol !== 'cuidador/familiar') {
             return res.status(404).json({ error: 'Cuidador no encontrado' });
         }
-        
+
         // Actualizar cuidador
         cuidador.pacienteAsociado = paciente._id;
         await cuidador.save();
-        
+
         // Actualizar paciente
         if (!paciente.cuidadores.includes(cuidador._id)) {
             paciente.cuidadores.push(cuidador._id);
             await paciente.save();
         }
-        
+
         res.json({ message: 'Cuidador asignado correctamente', paciente, cuidador });
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -186,11 +187,11 @@ router.get('/usuarios/:pacienteId/cuidadores', authMiddleware, async (req, res) 
     try {
         const paciente = await Usuario.findById(req.params.pacienteId)
             .populate('cuidadores', 'nombre email');
-        
+
         if (!paciente || paciente.rol !== 'paciente') {
             return res.status(404).json({ error: 'Paciente no encontrado' });
         }
-        
+
         res.json(paciente.cuidadores);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -202,15 +203,15 @@ router.post('/usuarios/:medicoId/pacientes/:pacienteId', authMiddleware, async (
     try {
         const medico = await Usuario.findById(req.params.medicoId);
         const paciente = await Usuario.findById(req.params.pacienteId);
-        
+
         if (!medico || medico.rol !== 'medico') {
             return res.status(404).json({ error: 'Médico no encontrado' });
         }
-        
+
         if (!paciente || paciente.rol !== 'paciente') {
             return res.status(404).json({ error: 'Paciente no encontrado' });
         }
-        
+
         // Actualizar relación bidireccional
         if (!medico.pacientesAsignados.includes(paciente._id)) {
             medico.pacientesAsignados.push(paciente._id);
@@ -222,7 +223,7 @@ router.post('/usuarios/:medicoId/pacientes/:pacienteId', authMiddleware, async (
             paciente.medicosAsignados.push(medico._id);
             await paciente.save();
         }
-        
+
         res.json({ message: 'Paciente asignado correctamente', medico });
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -234,11 +235,11 @@ router.get('/usuarios/:medicoId/pacientes', authMiddleware, async (req, res) => 
     try {
         const medico = await Usuario.findById(req.params.medicoId)
             .populate('pacientesAsignados', 'nombre email');
-        
+
         if (!medico || medico.rol !== 'medico') {
             return res.status(404).json({ error: 'Médico no encontrado' });
         }
-        
+
         res.json(medico.pacientesAsignados);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -263,51 +264,51 @@ router.get('/usuarios/rol/:rol', authMiddleware, async (req, res) => {
 // ========== RUTAS DEL PACIENTE ==========
 
 // Obtener fotos del paciente
-router.get('/paciente/fotos', 
-    authMiddleware, 
-    requireRole('paciente'), 
+router.get('/paciente/fotos',
+    authMiddleware,
+    requireRole('paciente'),
     pacienteController.getPatientPhotos
 );
 
 // Subir grabación de audio
-router.post('/paciente/grabar', 
-    authMiddleware, 
+router.post('/paciente/grabar',
+    authMiddleware,
     requireRole('paciente'),
     uploadAudio.single('audio'),
     pacienteController.uploadRecording
 );
 
 // Obtener grabaciones del paciente
-router.get('/paciente/grabaciones', 
-    authMiddleware, 
+router.get('/paciente/grabaciones',
+    authMiddleware,
     requireRole('paciente'),
     pacienteController.getPatientRecordings
 );
 
 // Obtener configuración del paciente
-router.get('/paciente/configuracion', 
-    authMiddleware, 
+router.get('/paciente/configuracion',
+    authMiddleware,
     requireRole('paciente'),
     pacienteController.getPatientSettings
 );
 
 // Actualizar configuración de recordatorios
-router.put('/paciente/configuracion', 
-    authMiddleware, 
+router.put('/paciente/configuracion',
+    authMiddleware,
     requireRole('paciente'),
     pacienteController.updatePatientSettings
 );
 
 // Actualizar perfil del paciente
-router.put('/paciente/perfil', 
-    authMiddleware, 
+router.put('/paciente/perfil',
+    authMiddleware,
     requireRole('paciente'),
     pacienteController.updatePatientProfile
 );
 
 // Cambiar contraseña del paciente
-router.put('/paciente/perfil/password', 
-    authMiddleware, 
+router.put('/paciente/perfil/password',
+    authMiddleware,
     requireRole('paciente'),
     pacienteController.updatePatientPassword
 );
@@ -506,6 +507,78 @@ router.get('/medico/pacientes/:pacienteId/reporte',
     authMiddleware,
     requireRole('medico'),
     medicoController.generarReporte
+);
+
+// ========== RUTAS DE MUSICOTERAPIA ==========
+
+// Buscar canciones en YouTube (cuidador)
+router.get('/musica/buscar',
+    authMiddleware,
+    requireRole('cuidador/familiar'),
+    musicaController.buscarCanciones
+);
+
+// Obtener playlist del paciente asociado (cuidador)
+router.get('/cuidador/musica/playlist',
+    authMiddleware,
+    requireRole('cuidador/familiar'),
+    musicaController.getPlaylist
+);
+
+// Agregar canción a la playlist (cuidador)
+router.post('/cuidador/musica/playlist',
+    authMiddleware,
+    requireRole('cuidador/familiar'),
+    musicaController.agregarCancion
+);
+
+// Eliminar canción de la playlist (cuidador)
+router.delete('/cuidador/musica/playlist/:videoId',
+    authMiddleware,
+    requireRole('cuidador/familiar'),
+    musicaController.eliminarCancion
+);
+
+// Ver reacciones del paciente (cuidador)
+router.get('/cuidador/musica/reacciones',
+    authMiddleware,
+    requireRole('cuidador/familiar'),
+    musicaController.getReaccionesPaciente
+);
+
+// Agregar nota del cuidador a una reacción
+router.patch('/cuidador/musica/reacciones/:reaccionId/nota',
+    authMiddleware,
+    requireRole('cuidador/familiar'),
+    musicaController.agregarNotaCuidador
+);
+
+// Obtener playlist (paciente)
+router.get('/paciente/musica/playlist',
+    authMiddleware,
+    requireRole('paciente'),
+    musicaController.getPlaylistPaciente
+);
+
+// Registrar reacción musical (paciente)
+router.post('/paciente/musica/reacciones',
+    authMiddleware,
+    requireRole('paciente'),
+    musicaController.registrarReaccion
+);
+
+// Obtener historial de reacciones (paciente)
+router.get('/paciente/musica/reacciones',
+    authMiddleware,
+    requireRole('paciente'),
+    musicaController.getMisReacciones
+);
+
+// Médico: ver reacciones de un paciente específico con estadísticas
+router.get('/medico/pacientes/:pacienteId/musica/reacciones',
+    authMiddleware,
+    requireRole('medico'),
+    musicaController.getReaccionesParaMedico
 );
 
 export default router;
