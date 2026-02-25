@@ -12,6 +12,7 @@ import {
   fetchPatientRecordings,
 } from '../../../services/medicoApi'
 import { AnalisisCognitivoView } from './AnalisisCognitivoView'
+import { MedicoMusica } from '../Musica/MedicoMusica'
 
 interface MedicoPatientDetailProps {
   caregivers: Caregiver[]
@@ -31,7 +32,7 @@ export const MedicoPatientDetail = ({
   const [loading, setLoading] = useState(true)
   const [showCaregiverModal, setShowCaregiverModal] = useState(false)
   const [selectedCaregiver, setSelectedCaregiver] = useState('')
-  const [activeTab, setActiveTab] = useState<'general' | 'fotos' | 'grabaciones' | 'analisis'>('general')
+  const [activeTab, setActiveTab] = useState<'general' | 'fotos' | 'grabaciones' | 'analisis' | 'musica'>('general')
 
   useEffect(() => {
     const loadData = async () => {
@@ -62,7 +63,7 @@ export const MedicoPatientDetail = ({
       await onAssignCaregiver(pacienteId, selectedCaregiver)
       setShowCaregiverModal(false)
       setSelectedCaregiver('')
-      
+
       // Recargar datos del paciente
       const patientData = await fetchPatientDetails(pacienteId)
       setPatient(patientData)
@@ -118,46 +119,51 @@ export const MedicoPatientDetail = ({
       <div className="flex gap-2 mb-8">
         <button
           onClick={() => setActiveTab('general')}
-          className={`px-6 py-3 rounded-lg font-semibold transition-all ${
-            activeTab === 'general'
+          className={`px-6 py-3 rounded-lg font-semibold transition-all ${activeTab === 'general'
               ? 'glass-button text-white'
               : 'bg-white/5 text-white/70 hover:bg-white/10'
-          }`}
+            }`}
         >
           General
         </button>
         <button
           onClick={() => setActiveTab('fotos')}
-          className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all ${
-            activeTab === 'fotos'
+          className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all ${activeTab === 'fotos'
               ? 'glass-button text-white'
               : 'bg-white/5 text-white/70 hover:bg-white/10'
-          }`}
+            }`}
         >
           <HiPhoto className="text-xl" />
           Fotos ({photos.length})
         </button>
         <button
           onClick={() => setActiveTab('grabaciones')}
-          className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all ${
-            activeTab === 'grabaciones'
+          className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all ${activeTab === 'grabaciones'
               ? 'glass-button text-white'
               : 'bg-white/5 text-white/70 hover:bg-white/10'
-          }`}
+            }`}
         >
           <HiMicrophone className="text-xl" />
           Grabaciones ({recordings.length})
         </button>
         <button
           onClick={() => setActiveTab('analisis')}
-          className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all ${
-            activeTab === 'analisis'
+          className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all ${activeTab === 'analisis'
               ? 'glass-button text-white'
               : 'bg-white/5 text-white/70 hover:bg-white/10'
-          }`}
+            }`}
         >
           <HiBeaker className="text-xl" />
           Análisis Cognitivo
+        </button>
+        <button
+          onClick={() => setActiveTab('musica')}
+          className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all ${activeTab === 'musica'
+              ? 'glass-button text-white'
+              : 'bg-white/5 text-white/70 hover:bg-white/10'
+            }`}
+        >
+          🎵 Musicoterapia
         </button>
       </div>
 
@@ -166,159 +172,159 @@ export const MedicoPatientDetail = ({
         <>
           {/* Estadísticas */}
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-10">
-        <div className="glass-card p-6">
-          <div className="p-3 rounded-xl bg-blue-500/20 backdrop-blur-sm w-fit mb-4">
-            <HiPhoto className="text-3xl text-blue-300" />
-          </div>
-          <h3 className="text-3xl font-bold text-white">{patient.estadisticas.totalFotos}</h3>
-          <p className="text-sm text-white/70 mt-1">Fotos subidas</p>
-        </div>
+            <div className="glass-card p-6">
+              <div className="p-3 rounded-xl bg-blue-500/20 backdrop-blur-sm w-fit mb-4">
+                <HiPhoto className="text-3xl text-blue-300" />
+              </div>
+              <h3 className="text-3xl font-bold text-white">{patient.estadisticas.totalFotos}</h3>
+              <p className="text-sm text-white/70 mt-1">Fotos subidas</p>
+            </div>
 
-        <div className="glass-card p-6">
-          <div className="p-3 rounded-xl bg-purple-500/20 backdrop-blur-sm w-fit mb-4">
-            <HiMicrophone className="text-3xl text-purple-300" />
-          </div>
-          <h3 className="text-3xl font-bold text-white">{patient.estadisticas.totalGrabaciones}</h3>
-          <p className="text-sm text-white/70 mt-1">Grabaciones totales</p>
-        </div>
+            <div className="glass-card p-6">
+              <div className="p-3 rounded-xl bg-purple-500/20 backdrop-blur-sm w-fit mb-4">
+                <HiMicrophone className="text-3xl text-purple-300" />
+              </div>
+              <h3 className="text-3xl font-bold text-white">{patient.estadisticas.totalGrabaciones}</h3>
+              <p className="text-sm text-white/70 mt-1">Grabaciones totales</p>
+            </div>
 
-        <div className="glass-card p-6">
-          <div className="p-3 rounded-xl bg-green-500/20 backdrop-blur-sm w-fit mb-4">
-            <HiMicrophone className="text-3xl text-green-300" />
-          </div>
-          <h3 className="text-3xl font-bold text-white">{patient.estadisticas.grabacionesEstaSemana}</h3>
-          <p className="text-sm text-white/70 mt-1">Esta semana</p>
-          <div className="mt-3 w-full bg-white/10 rounded-full h-2">
-            <div
-              className="bg-gradient-to-r from-green-400 to-emerald-500 h-2 rounded-full transition-all duration-500"
-              style={{
-                width: `${Math.min((patient.estadisticas.grabacionesEstaSemana / patient.estadisticas.metaSemanal) * 100, 100)}%`,
-              }}
-            />
-          </div>
-          <p className="text-xs text-white/50 mt-1">
-            Meta: {patient.estadisticas.metaSemanal} por semana
-          </p>
-        </div>
-
-        <div className="glass-card p-6">
-          <p className="text-sm text-white/70 mb-3">Última grabación</p>
-          {patient.estadisticas.ultimaGrabacion ? (
-            <>
-              <p className="text-white text-sm">
-                {new Date(patient.estadisticas.ultimaGrabacion.fecha).toLocaleDateString('es-ES', {
-                  day: '2-digit',
-                  month: 'long',
-                  year: 'numeric',
-                })}
+            <div className="glass-card p-6">
+              <div className="p-3 rounded-xl bg-green-500/20 backdrop-blur-sm w-fit mb-4">
+                <HiMicrophone className="text-3xl text-green-300" />
+              </div>
+              <h3 className="text-3xl font-bold text-white">{patient.estadisticas.grabacionesEstaSemana}</h3>
+              <p className="text-sm text-white/70 mt-1">Esta semana</p>
+              <div className="mt-3 w-full bg-white/10 rounded-full h-2">
+                <div
+                  className="bg-gradient-to-r from-green-400 to-emerald-500 h-2 rounded-full transition-all duration-500"
+                  style={{
+                    width: `${Math.min((patient.estadisticas.grabacionesEstaSemana / patient.estadisticas.metaSemanal) * 100, 100)}%`,
+                  }}
+                />
+              </div>
+              <p className="text-xs text-white/50 mt-1">
+                Meta: {patient.estadisticas.metaSemanal} por semana
               </p>
-              <p className="text-white/70 text-xs mt-1">
-                Duración: {Math.floor(patient.estadisticas.ultimaGrabacion.duracion / 60)}:
-                {(patient.estadisticas.ultimaGrabacion.duracion % 60).toString().padStart(2, '0')}
-              </p>
-            </>
-          ) : (
-            <p className="text-white/50 text-sm">Sin grabaciones</p>
-          )}
-          </div>
+            </div>
+
+            <div className="glass-card p-6">
+              <p className="text-sm text-white/70 mb-3">Última grabación</p>
+              {patient.estadisticas.ultimaGrabacion ? (
+                <>
+                  <p className="text-white text-sm">
+                    {new Date(patient.estadisticas.ultimaGrabacion.fecha).toLocaleDateString('es-ES', {
+                      day: '2-digit',
+                      month: 'long',
+                      year: 'numeric',
+                    })}
+                  </p>
+                  <p className="text-white/70 text-xs mt-1">
+                    Duración: {Math.floor(patient.estadisticas.ultimaGrabacion.duracion / 60)}:
+                    {(patient.estadisticas.ultimaGrabacion.duracion % 60).toString().padStart(2, '0')}
+                  </p>
+                </>
+              ) : (
+                <p className="text-white/50 text-sm">Sin grabaciones</p>
+              )}
+            </div>
           </div>
 
           {/* Cuidadores Asignados */}
           <div className="glass-card p-6 mb-10">
-        <h3 className="text-xl font-bold text-white mb-4">Cuidadores asignados</h3>
-        {patient.cuidadores.length === 0 ? (
-          <p className="text-white/50">Sin cuidadores asignados</p>
-        ) : (
-          <div className="flex flex-wrap gap-2">
-            {patient.cuidadores.map((cuidador) => (
-              <div
-                key={cuidador._id}
-                className="px-4 py-2 rounded-full bg-white/10 border border-white/20 text-white text-sm"
-              >
-                {cuidador.nombre} ({cuidador.email})
+            <h3 className="text-xl font-bold text-white mb-4">Cuidadores asignados</h3>
+            {patient.cuidadores.length === 0 ? (
+              <p className="text-white/50">Sin cuidadores asignados</p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {patient.cuidadores.map((cuidador) => (
+                  <div
+                    key={cuidador._id}
+                    className="px-4 py-2 rounded-full bg-white/10 border border-white/20 text-white text-sm"
+                  >
+                    {cuidador.nombre} ({cuidador.email})
+                  </div>
+                ))}
               </div>
-            ))}
-            </div>
-          )}
+            )}
           </div>
 
           {/* Fotos - Resumen */}
           <div className="glass-card p-6 mb-10">
-        <h3 className="text-2xl font-bold text-white mb-6">Fotografías ({photos.length})</h3>
-        {photos.length === 0 ? (
-          <p className="text-white/70 text-center py-8">No hay fotografías subidas</p>
-        ) : (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {photos.map((photo) => (
-              <div key={photo._id} className="glass-card overflow-hidden group">
-                <div className="relative h-48 w-full overflow-hidden">
-                  <img
-                    src={photo.url_contenido}
-                    alt={photo.etiqueta}
-                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#0A1220]/70 via-transparent to-transparent" />
-                  <div className="absolute bottom-4 left-4 right-4">
-                    <p className="text-white text-sm font-semibold">{photo.etiqueta}</p>
+            <h3 className="text-2xl font-bold text-white mb-6">Fotografías ({photos.length})</h3>
+            {photos.length === 0 ? (
+              <p className="text-white/70 text-center py-8">No hay fotografías subidas</p>
+            ) : (
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                {photos.map((photo) => (
+                  <div key={photo._id} className="glass-card overflow-hidden group">
+                    <div className="relative h-48 w-full overflow-hidden">
+                      <img
+                        src={photo.url_contenido}
+                        alt={photo.etiqueta}
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#0A1220]/70 via-transparent to-transparent" />
+                      <div className="absolute bottom-4 left-4 right-4">
+                        <p className="text-white text-sm font-semibold">{photo.etiqueta}</p>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                ))}
               </div>
-            ))}
-            </div>
-          )}
+            )}
           </div>
 
           {/* Grabaciones - Resumen */}
           <div className="glass-card p-6 mb-10">
-        <h3 className="text-2xl font-bold text-white mb-6">Grabaciones ({recordings.length})</h3>
-        {recordings.length === 0 ? (
-          <p className="text-white/70 text-center py-8">No hay grabaciones realizadas</p>
-        ) : (
-          <div className="space-y-4">
-            {recordings.map((recording) => (
-              <div
-                key={recording._id}
-                className="p-4 rounded-xl bg-white/5 border border-white/10"
-              >
-                <div className="flex items-start gap-4">
-                  <img
-                    src={recording.fotoUrl}
-                    alt="Foto"
-                    className="h-16 w-16 rounded-lg object-cover"
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-white font-semibold">
-                        {new Date(recording.fecha).toLocaleDateString('es-ES', {
-                          day: '2-digit',
-                          month: 'long',
-                          year: 'numeric',
-                        })}
-                      </p>
-                      <span className="text-white/70 text-sm">
-                        {Math.floor(recording.duracion / 60)}:
-                        {(recording.duracion % 60).toString().padStart(2, '0')}
-                      </span>
+            <h3 className="text-2xl font-bold text-white mb-6">Grabaciones ({recordings.length})</h3>
+            {recordings.length === 0 ? (
+              <p className="text-white/70 text-center py-8">No hay grabaciones realizadas</p>
+            ) : (
+              <div className="space-y-4">
+                {recordings.map((recording) => (
+                  <div
+                    key={recording._id}
+                    className="p-4 rounded-xl bg-white/5 border border-white/10"
+                  >
+                    <div className="flex items-start gap-4">
+                      <img
+                        src={recording.fotoUrl}
+                        alt="Foto"
+                        className="h-16 w-16 rounded-lg object-cover"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-white font-semibold">
+                            {new Date(recording.fecha).toLocaleDateString('es-ES', {
+                              day: '2-digit',
+                              month: 'long',
+                              year: 'numeric',
+                            })}
+                          </p>
+                          <span className="text-white/70 text-sm">
+                            {Math.floor(recording.duracion / 60)}:
+                            {(recording.duracion % 60).toString().padStart(2, '0')}
+                          </span>
+                        </div>
+                        {recording.audioUrl && (
+                          <audio
+                            controls
+                            src={recording.audioUrl}
+                            className="w-full h-8"
+                            style={{ filter: 'invert(0.9)' }}
+                          >
+                            Tu navegador no soporta la reproducción de audio.
+                          </audio>
+                        )}
+                        {recording.descripcionTexto && (
+                          <p className="text-white/70 text-sm mt-2">{recording.descripcionTexto}</p>
+                        )}
+                      </div>
                     </div>
-                    {recording.audioUrl && (
-                      <audio
-                        controls
-                        src={recording.audioUrl}
-                        className="w-full h-8"
-                        style={{ filter: 'invert(0.9)' }}
-                      >
-                        Tu navegador no soporta la reproducción de audio.
-                      </audio>
-                    )}
-                    {recording.descripcionTexto && (
-                      <p className="text-white/70 text-sm mt-2">{recording.descripcionTexto}</p>
-                    )}
                   </div>
-                </div>
+                ))}
               </div>
-            ))}
-            </div>
-          )}
+            )}
           </div>
         </>
       )}
@@ -387,7 +393,7 @@ export const MedicoPatientDetail = ({
                           {(recording.duracion % 60).toString().padStart(2, '0')}
                         </span>
                       </div>
-                      
+
                       {/* Tipo de contenido */}
                       <div className="flex gap-2 mb-3">
                         {recording.tipoContenido === 'audio' && (
@@ -422,14 +428,14 @@ export const MedicoPatientDetail = ({
                           Tu navegador no soporta la reproducción de audio.
                         </audio>
                       )}
-                      
+
                       {recording.descripcionTexto && (
                         <div className="mb-3 p-3 rounded-lg bg-purple-500/10 border border-purple-500/30">
                           <p className="text-purple-300 text-sm font-semibold mb-1">Descripción:</p>
                           <p className="text-white/80 text-sm">{recording.descripcionTexto}</p>
                         </div>
                       )}
-                      
+
                       {recording.transcripcion && (
                         <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/30">
                           <p className="text-blue-300 text-sm font-semibold mb-1">Transcripción:</p>
@@ -451,6 +457,11 @@ export const MedicoPatientDetail = ({
           pacienteId={pacienteId}
           pacienteNombre={patient.nombre}
         />
+      )}
+
+      {/* Musicoterapia (Tab) */}
+      {activeTab === 'musica' && pacienteId && (
+        <MedicoMusica pacienteId={pacienteId} />
       )}
 
       {/* Modal: Asignar Cuidador */}

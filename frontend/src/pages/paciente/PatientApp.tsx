@@ -6,6 +6,7 @@ import { PatientDashboard } from '../../components/Paciente/Dashboard/PatientDas
 import { PatientPhotos } from '../../components/Paciente/MisFotos/PatientPhotos'
 import { PatientRecordings } from '../../components/Paciente/MisGrabaciones/PatientRecordings'
 import { PatientSettings } from '../../components/Paciente/Configuracion/PatientSettings'
+import { PatientMusica } from '../../components/Paciente/miMusica/PatientMusica'
 import {
   PatientPhoto,
   PatientProfile,
@@ -131,11 +132,11 @@ export const PatientApp = () => {
     })
   }, [recordings])
 
-  const handleUploadRecording = async (payload: { 
-    photoId: string, 
-    audio?: Blob, 
+  const handleUploadRecording = async (payload: {
+    photoId: string,
+    audio?: Blob,
     duration?: number,
-    descripcionTexto?: string 
+    descripcionTexto?: string
   }) => {
     try {
       await uploadPatientRecording({
@@ -147,7 +148,7 @@ export const PatientApp = () => {
 
       const relatedPhoto = photos.find((photo) => photo._id === payload.photoId)
       const localAudioUrl = payload.audio ? URL.createObjectURL(payload.audio) : undefined
-      
+
       setRecordings((prev) => [
         {
           _id: `temp-${Date.now()}`,
@@ -226,46 +227,50 @@ export const PatientApp = () => {
           <Routes>
             <Route
               path="dashboard"
-            element={
-              <PatientDashboard
-                userName={user.nombre ?? 'Paciente'}
-                sessionsCompleted={sessionsThisWeek}
-                weeklyGoal={4}
-                nextReminder={reminders}
-                recentRecordingDate={latestRecordingDate}
-                photoCount={photos.length}
-                onNavigate={(path) => navigate(path)}
-              />
-            }
-          />
-          <Route
-            path="fotos"
-            element={
-              <PatientPhotos
-                photos={photos}
-                onUploadRecording={handleUploadRecording}
-                loading={photosLoading}
-              />
-            }
-          />
-          <Route
-            path="grabaciones"
-            element={
-              <PatientRecordings recordings={recordings} loading={recordingsLoading} />
-            }
-          />
-          <Route
-            path="configuracion"
-            element={
-              <PatientSettings
-                reminders={reminders}
-                profile={profile}
-                onSaveReminders={handleSaveReminders}
-                onSaveProfile={handleSaveProfile}
-                onChangePassword={handleChangePassword}
-              />
-            }
-          />
+              element={
+                <PatientDashboard
+                  userName={user.nombre ?? 'Paciente'}
+                  sessionsCompleted={sessionsThisWeek}
+                  weeklyGoal={4}
+                  nextReminder={reminders}
+                  recentRecordingDate={latestRecordingDate}
+                  photoCount={photos.length}
+                  onNavigate={(path) => navigate(path)}
+                />
+              }
+            />
+            <Route
+              path="fotos"
+              element={
+                <PatientPhotos
+                  photos={photos}
+                  onUploadRecording={handleUploadRecording}
+                  loading={photosLoading}
+                />
+              }
+            />
+            <Route
+              path="grabaciones"
+              element={
+                <PatientRecordings recordings={recordings} loading={recordingsLoading} />
+              }
+            />
+            <Route
+              path="musica"
+              element={<PatientMusica />}
+            />
+            <Route
+              path="configuracion"
+              element={
+                <PatientSettings
+                  reminders={reminders}
+                  profile={profile}
+                  onSaveReminders={handleSaveReminders}
+                  onSaveProfile={handleSaveProfile}
+                  onChangePassword={handleChangePassword}
+                />
+              }
+            />
             <Route path="*" element={<Navigate to="dashboard" replace />} />
           </Routes>
         </div>

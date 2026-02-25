@@ -6,6 +6,7 @@ import { CuidadorDashboard } from '../../components/Cuidador/Dashboard/CuidadorD
 import { CuidadorPhotos } from '../../components/Cuidador/GestionFotos/CuidadorPhotos'
 import { CuidadorProgress } from '../../components/Cuidador/Progreso/CuidadorProgress'
 import { LineaTiempoEvolucion } from '../../components/Cuidador/LineaTiempo/LineaTiempoEvolucion'
+import { CuidadorMusica } from '../../components/Cuidador/gestionMusica/CuidadorMusica'
 import {
   CuidadorPhoto,
   CuidadorRecording,
@@ -119,7 +120,7 @@ export const CuidadorApp = () => {
 
   const handleAutoAssign = async () => {
     const TEST_PATIENT_ID = '690e44b121ba0748c3181ab2'
-    
+
     if (!user.id) {
       toast.error('No se pudo obtener tu ID de usuario')
       return
@@ -129,7 +130,7 @@ export const CuidadorApp = () => {
     try {
       await assignCuidadorToPatient(TEST_PATIENT_ID, user.id)
       toast.success('¡Asignación exitosa! Recargando...')
-      
+
       // Esperar un momento y recargar la página
       setTimeout(() => {
         window.location.reload()
@@ -185,7 +186,7 @@ export const CuidadorApp = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
             </div>
-            
+
             <div className="space-y-3">
               <h2 className="text-3xl font-bold text-white">Sin Paciente Asignado</h2>
               <p className="text-lg text-white/90">
@@ -255,8 +256,8 @@ export const CuidadorApp = () => {
       <Navbar />
 
       <main className="flex-1 pb-12">
-        <CuidadorNavbar 
-          userName={user.nombre ?? 'Cuidador'} 
+        <CuidadorNavbar
+          userName={user.nombre ?? 'Cuidador'}
           userEmail={user.email}
           patientName={patient.nombre}
         />
@@ -300,6 +301,10 @@ export const CuidadorApp = () => {
             <Route
               path="linea-tiempo"
               element={<LineaTiempoEvolucion />}
+            />
+            <Route
+              path="musica"
+              element={<CuidadorMusica />}
             />
             <Route path="*" element={<Navigate to="dashboard" replace />} />
           </Routes>

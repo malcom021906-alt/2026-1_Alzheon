@@ -1,4 +1,4 @@
-import { HiArrowRightOnRectangle, HiHome, HiPhoto, HiChartBar, HiClock } from 'react-icons/hi2'
+import { HiArrowRightOnRectangle, HiHome, HiPhoto, HiChartBar, HiClock, HiMusicalNote } from 'react-icons/hi2'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 import { toast } from 'sonner'
@@ -17,6 +17,7 @@ const navItems = [
   { label: 'Gestión de Fotos', path: '/cuidador/fotos', icon: HiPhoto },
   { label: 'Progreso del Paciente', path: '/cuidador/progreso', icon: HiChartBar },
   { label: 'Línea de Tiempo', path: '/cuidador/linea-tiempo', icon: HiClock },
+  { label: 'Musicoterapia', path: '/cuidador/musica', icon: HiMusicalNote },
 ]
 
 export const CuidadorNavbar = ({ userName, userEmail, patientName }: CuidadorNavbarProps) => {

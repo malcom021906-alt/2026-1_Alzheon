@@ -1,4 +1,4 @@
-import { HiArrowRightOnRectangle, HiCog6Tooth, HiHome, HiMicrophone, HiPhoto } from 'react-icons/hi2'
+import { HiArrowRightOnRectangle, HiCog6Tooth, HiHome, HiMicrophone, HiPhoto, HiMusicalNote } from 'react-icons/hi2'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 import { toast } from 'sonner'
@@ -15,6 +15,7 @@ const navItems = [
   { label: 'Dashboard', path: '/paciente/dashboard', icon: HiHome },
   { label: 'Mis Fotos', path: '/paciente/fotos', icon: HiPhoto },
   { label: 'Mis Grabaciones', path: '/paciente/grabaciones', icon: HiMicrophone },
+  { label: 'Mi Música', path: '/paciente/musica', icon: HiMusicalNote },
   { label: 'Configuración', path: '/paciente/configuracion', icon: HiCog6Tooth },
 ]
 

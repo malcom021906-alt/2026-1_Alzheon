@@ -1,5 +1,3 @@
-musicaController.js
-
 import axios from 'axios';
 import Usuario from '../models/usuario.js';
 import MusicaTerapia from '../models/musicaTerapia.js';

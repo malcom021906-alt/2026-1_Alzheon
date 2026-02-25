@@ -1,5 +1,3 @@
-musicaTerapia.js
-
 import mongoose from 'mongoose';
 
 const cancionSchema = new mongoose.Schema({
