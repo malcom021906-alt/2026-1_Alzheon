@@ -574,6 +574,13 @@ router.get('/paciente/musica/reacciones',
     musicaController.getMisReacciones
 );
 
+// Médico: análisis IA de musicoterapia de un paciente
+router.get('/medico/pacientes/:pacienteId/musica/analisis-ia',
+    authMiddleware,
+    requireRole('medico'),
+    musicaController.getAnalisisMusicaIA
+);
+
 // Médico: ver reacciones de un paciente específico con estadísticas
 router.get('/medico/pacientes/:pacienteId/musica/reacciones',
     authMiddleware,

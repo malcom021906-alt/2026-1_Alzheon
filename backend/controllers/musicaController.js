@@ -302,6 +302,169 @@ export const getMisReacciones = async (req, res) => {
 // ─────────────────────────────────────────────
 
 /**
+ * GET /api/medico/pacientes/:pacienteId/musica/analisis-ia
+ * Genera un análisis clínico de musicoterapia usando Google Gemini AI.
+ * Incluye narrativa, puntuación de bienestar, tendencias, alertas y recomendaciones.
+ */
+export const getAnalisisMusicaIA = async (req, res) => {
+    try {
+        const { pacienteId } = req.params;
+
+        // Verificar que el médico tiene acceso al paciente
+        const medico = await Usuario.findById(req.usuario._id);
+        if (!medico || medico.rol !== 'medico') {
+            return res.status(403).json({ error: 'No autorizado' });
+        }
+
+        const tieneAcceso = medico.pacientesAsignados.some(
+            id => id.toString() === pacienteId
+        );
+        if (!tieneAcceso) {
+            return res.status(403).json({ error: 'Este paciente no está asignado a tu cuenta' });
+        }
+
+        // Obtener reacciones del paciente (más recientes primero)
+        const reacciones = await ReaccionMusical.find({ pacienteId })
+            .sort({ createdAt: -1 })
+            .limit(50); // Limitar a las 50 más recientes para no saturar el prompt
+
+        if (reacciones.length === 0) {
+            return res.status(400).json({ error: 'El paciente no tiene reacciones musicales registradas aún' });
+        }
+
+        const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+        if (!GEMINI_API_KEY) {
+            return res.status(500).json({ error: 'GEMINI_API_KEY no configurada en el servidor' });
+        }
+
+        // ── Construir el resumen de datos para Gemini ──────────────────────────
+
+        const EMOCION_LABELS = {
+            muy_feliz: 'Muy Feliz',
+            feliz: 'Feliz',
+            neutral: 'Neutral',
+            triste: 'Triste',
+            ansioso: 'Ansioso',
+            sin_reaccion: 'Sin Reacción',
+        };
+
+        const NIVEL_LABELS = {
+            ninguno: 'Sin recuerdo',
+            vago: 'Recuerdo vago',
+            claro: 'Recuerdo claro',
+            muy_claro: 'Recuerdo muy claro',
+        };
+
+        // Contar emociones
+        const conteoEmociones = {};
+        reacciones.forEach(r => {
+            conteoEmociones[r.emocion] = (conteoEmociones[r.emocion] || 0) + 1;
+        });
+
+        // Porcentaje de reacciones positivas
+        const positivas = (conteoEmociones.muy_feliz || 0) + (conteoEmociones.feliz || 0);
+        const pctPositivo = Math.round((positivas / reacciones.length) * 100);
+
+        // Reacciones con recuerdos evocados
+        const conRecuerdo = reacciones.filter(r => r.recuerdo && r.recuerdo.trim().length > 0);
+
+        // Construir lista de detalles de cada reacción
+        const detallesReacciones = reacciones.map((r, i) => {
+            const fecha = new Date(r.createdAt).toLocaleDateString('es-CO', {
+                day: 'numeric', month: 'short', year: 'numeric',
+            });
+            let linea = `${i + 1}. [${fecha}] Canción: "${r.tituloCancion}" (${r.artistaCancion}) | Emoción: ${EMOCION_LABELS[r.emocion]} | Nivel recuerdo: ${NIVEL_LABELS[r.nivelRecuerdo]}`;
+            if (r.recuerdo) linea += ` | Recuerdo: "${r.recuerdo}"`;
+            if (r.notasCuidador) linea += ` | Nota del cuidador: "${r.notasCuidador}"`;
+            return linea;
+        }).join('\n');
+
+        const resumenEstadistico = Object.entries(conteoEmociones)
+            .map(([em, cnt]) => `${EMOCION_LABELS[em]}: ${cnt} vez(veces)`)
+            .join(', ');
+
+        const prompt = `Eres un asistente clínico especializado en musicoterapia para pacientes con Alzheimer o deterioro cognitivo.
+
+DATOS DEL PACIENTE (últimas ${reacciones.length} sesiones musicales):
+
+Distribución emocional: ${resumenEstadistico}
+Porcentaje de respuestas positivas: ${pctPositivo}%
+Reacciones con recuerdos evocados: ${conRecuerdo.length} de ${reacciones.length}
+
+Historial detallado:
+${detallesReacciones}
+
+Analiza estos datos y devuelve SOLO un JSON válido con exactamente esta estructura:
+
+{
+  "narrativa": "<párrafo de 2-3 oraciones describiendo el estado general del paciente en la musicoterapia, patrones observados y evolución>",
+  "puntuacion": <número entero 0-100 representando el bienestar musical del paciente>,
+  "tendencia": "<'mejoria' | 'estable' | 'atencion_requerida'>",
+  "alertas": ["<alerta clínica 1 si existe>", "<alerta 2 si existe>"],
+  "recomendaciones": [
+    "<recomendación musical o terapéutica 1>",
+    "<recomendación 2>",
+    "<recomendación 3>"
+  ],
+  "cancionesDestacadas": ["<título de canción que generó mejor respuesta>"],
+  "resumenEmocional": "<1 oración resumiendo el estado emocional predominante>"
+}
+
+Responde SOLO con el JSON, sin texto adicional.`;
+
+        // ── Llamar a Gemini ────────────────────────────────────────────────────
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GEMINI_API_KEY}`;
+
+        const response = await axios.post(url, {
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+                temperature: 0.4,
+                maxOutputTokens: 2048,
+            }
+        });
+
+        const rawText = response.data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+
+        // Parsear el JSON de la respuesta
+        let analisis;
+        try {
+            const jsonMatch = rawText.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/) || rawText.match(/(\{[\s\S]*\})/);
+            analisis = JSON.parse(jsonMatch ? jsonMatch[1] : rawText);
+        } catch (parseError) {
+            console.error('Error parseando respuesta de Gemini:', parseError.message);
+            console.error('Raw text:', rawText.substring(0, 500));
+            return res.status(500).json({ error: 'Error al procesar la respuesta de la IA. Intenta nuevamente.' });
+        }
+
+        // Validar y normalizar campos
+        const resultado = {
+            narrativa: typeof analisis.narrativa === 'string' ? analisis.narrativa : 'Análisis no disponible.',
+            puntuacion: Math.min(100, Math.max(0, parseInt(analisis.puntuacion) || 50)),
+            tendencia: ['mejoria', 'estable', 'atencion_requerida'].includes(analisis.tendencia)
+                ? analisis.tendencia
+                : 'estable',
+            alertas: Array.isArray(analisis.alertas) ? analisis.alertas.filter(Boolean) : [],
+            recomendaciones: Array.isArray(analisis.recomendaciones) ? analisis.recomendaciones.filter(Boolean) : [],
+            cancionesDestacadas: Array.isArray(analisis.cancionesDestacadas) ? analisis.cancionesDestacadas.filter(Boolean) : [],
+            resumenEmocional: typeof analisis.resumenEmocional === 'string' ? analisis.resumenEmocional : '',
+            totalReaccionesAnalizadas: reacciones.length,
+            generadoEn: new Date().toISOString(),
+        };
+
+        console.log(`✅ Análisis IA generado para paciente ${pacienteId}: puntuación=${resultado.puntuacion}, tendencia=${resultado.tendencia}`);
+        res.json(resultado);
+
+    } catch (error) {
+        console.error('Error generando análisis IA de musicoterapia:', error.message);
+        if (error.response) {
+            console.error('Gemini API status:', error.response.status);
+            console.error('Gemini API error:', JSON.stringify(error.response.data, null, 2));
+        }
+        res.status(500).json({ error: 'Error al generar el análisis con IA. Verifica la configuración del servidor.' });
+    }
+};
+
+/**
  * GET /api/medico/pacientes/:pacienteId/musica/reacciones
  * Retorna las reacciones musicales de un paciente con estadísticas agregadas.
  */

@@ -6,7 +6,7 @@ import axios from 'axios';
  */
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_MODEL = 'gemini-2.0-flash-exp'; // Modelo más rápido sin thinking tokens
+const GEMINI_MODEL = 'gemini-flash-latest'; // Alias estable para el modelo Flash más reciente
 
 /**
  * Analizar texto usando Vertex AI para detectar patrones cognitivos
@@ -31,7 +31,7 @@ export const analizarTexto = async (texto, contexto = '') => {
 
         // Llamar a Google Gemini API
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
-        
+
         const response = await axios.post(url, {
             contents: [{
                 parts: [{
@@ -49,12 +49,12 @@ export const analizarTexto = async (texto, contexto = '') => {
         // Parsear respuesta
         const responseData = response.data;
         console.log('📦 Respuesta completa de Gemini:', JSON.stringify(responseData, null, 2));
-        
+
         const analisisTexto = response.data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
-        
+
         // Debug: Mostrar la respuesta raw
         console.log('📄 Respuesta de Gemini:', analisisTexto.substring(0, 500));
-        
+
         const analisis = parsearAnalisis(analisisTexto);
 
         console.log('📊 Métricas detectadas:');
@@ -116,7 +116,7 @@ function parsearAnalisis(textoAnalisis) {
         // Limpiar el texto para extraer solo el JSON
         // Buscar el JSON entre ```json y ``` o directamente { ... }
         let jsonText = textoAnalisis;
-        
+
         // Intentar extraer de bloques de código markdown
         const codeBlockMatch = textoAnalisis.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
         if (codeBlockMatch) {
@@ -128,11 +128,11 @@ function parsearAnalisis(textoAnalisis) {
                 jsonText = jsonMatch[0];
             }
         }
-        
+
         console.log('🔍 JSON extraído:', jsonText.substring(0, 300));
-        
+
         const analisis = JSON.parse(jsonText);
-        
+
         // Validar y normalizar valores
         const metricas = {
             coherencia: Math.min(Math.max(analisis.coherencia || 0.5, 0), 1),
@@ -160,7 +160,7 @@ function parsearAnalisis(textoAnalisis) {
     } catch (error) {
         console.error('❌ Error al parsear análisis:', error.message);
     }
-    
+
     return generarAnalisisPorDefecto();
 }
 

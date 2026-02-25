@@ -166,3 +166,29 @@ export const fetchReaccionesParaMedico = async (
     )
     return data
 }
+
+// ─── Médico — Análisis IA ─────────────────────────────────────────────────────
+
+export type TendenciaMusical = 'mejoria' | 'estable' | 'atencion_requerida'
+
+export interface AnalisisMusicaIA {
+    narrativa: string
+    puntuacion: number
+    tendencia: TendenciaMusical
+    alertas: string[]
+    recomendaciones: string[]
+    cancionesDestacadas: string[]
+    resumenEmocional: string
+    totalReaccionesAnalizadas: number
+    generadoEn: string
+}
+
+/** Genera un análisis clínico IA de la musicoterapia de un paciente (médico) */
+export const fetchAnalisisMusicaIA = async (
+    pacienteId: string
+): Promise<AnalisisMusicaIA> => {
+    const { data } = await musicaApiClient.get(
+        `/api/medico/pacientes/${pacienteId}/musica/analisis-ia`
+    )
+    return data
+}

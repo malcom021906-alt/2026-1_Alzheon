@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
-import { HiMusicalNote, HiChartBar, HiCalendar } from 'react-icons/hi2'
+import { HiMusicalNote, HiChartBar, HiCalendar, HiSparkles } from 'react-icons/hi2'
 import {
     fetchReaccionesParaMedico,
+    fetchAnalisisMusicaIA,
     type ReaccionMusical,
     type EstadisticasMusica,
     type EmocionMusical,
+    type AnalisisMusicaIA,
+    type TendenciaMusical,
 } from '../../../services/musicaApi'
 import {
     BarChart,
@@ -44,6 +47,22 @@ const NIVEL_LABEL: Record<string, string> = {
     muy_claro: 'Muy claro',
 }
 
+// ─── Tendencia ────────────────────────────────────────────────────────────────
+
+const TENDENCIA_CONFIG: Record<TendenciaMusical, { emoji: string; label: string; color: string; bg: string }> = {
+    mejoria: { emoji: '📈', label: 'Mejoría', color: 'text-green-300', bg: 'bg-green-500/20 border-green-400/30' },
+    estable: { emoji: '📊', label: 'Estable', color: 'text-blue-300', bg: 'bg-blue-500/20 border-blue-400/30' },
+    atencion_requerida: { emoji: '⚠️', label: 'Atención Requerida', color: 'text-orange-300', bg: 'bg-orange-500/20 border-orange-400/30' },
+}
+
+// ─── Barra de puntuación ──────────────────────────────────────────────────────
+
+const getScoreColor = (score: number) => {
+    if (score >= 75) return '#4ade80'
+    if (score >= 50) return '#facc15'
+    return '#fb923c'
+}
+
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 interface MedicoMusicaProps {
@@ -56,6 +75,10 @@ export const MedicoMusica = ({ pacienteId }: MedicoMusicaProps) => {
     const [reacciones, setReacciones] = useState<ReaccionMusical[]>([])
     const [estadisticas, setEstadisticas] = useState<EstadisticasMusica | null>(null)
     const [loading, setLoading] = useState(true)
+
+    // Análisis IA
+    const [analisisIA, setAnalisisIA] = useState<AnalisisMusicaIA | null>(null)
+    const [generandoIA, setGenerandoIA] = useState(false)
 
     useEffect(() => {
         const cargar = async () => {
@@ -71,6 +94,21 @@ export const MedicoMusica = ({ pacienteId }: MedicoMusicaProps) => {
         }
         cargar()
     }, [pacienteId])
+
+    // ── Generar análisis IA ───────────────────────────────────────────────────
+    const handleGenerarAnalisis = async () => {
+        setGenerandoIA(true)
+        try {
+            const resultado = await fetchAnalisisMusicaIA(pacienteId)
+            setAnalisisIA(resultado)
+            toast.success('Análisis IA generado correctamente')
+        } catch (error: any) {
+            const msg = error?.response?.data?.error || 'No se pudo generar el análisis IA'
+            toast.error(msg)
+        } finally {
+            setGenerandoIA(false)
+        }
+    }
 
     if (loading) {
         return (
@@ -212,6 +250,176 @@ export const MedicoMusica = ({ pacienteId }: MedicoMusicaProps) => {
                         </BarChart>
                     </ResponsiveContainer>
                 </div>
+            </div>
+
+            {/* ── Panel de Análisis IA ────────────────────────────────────────── */}
+            <div className="glass-panel rounded-2xl p-5 border border-purple-400/20">
+                {/* Cabecera del panel IA */}
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-purple-500/30 flex items-center justify-center">
+                            <HiSparkles className="text-purple-300 text-base" />
+                        </div>
+                        <div>
+                            <h4 className="text-white font-semibold text-sm">Análisis Clínico con IA</h4>
+                            <p className="text-white/50 text-xs">Generado por Google Gemini · Incluye notas del cuidador</p>
+                        </div>
+                    </div>
+
+                    {!generandoIA && (
+                        <button
+                            onClick={handleGenerarAnalisis}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-purple-500/40 to-blue-500/40 hover:from-purple-500/60 hover:to-blue-500/60 text-white text-sm font-semibold transition-all border border-white/10"
+                        >
+                            <HiSparkles className="text-base" />
+                            {analisisIA ? 'Regenerar' : 'Generar Análisis IA'}
+                        </button>
+                    )}
+                </div>
+
+                {/* Estado: generando */}
+                {generandoIA && (
+                    <div className="rounded-xl bg-purple-500/10 border border-purple-400/20 p-6 text-center">
+                        <div className="flex flex-col items-center gap-3">
+                            <div className="relative w-12 h-12">
+                                <div className="absolute inset-0 rounded-full border-2 border-purple-400/30 animate-pulse" />
+                                <div className="absolute inset-1 rounded-full border-2 border-t-purple-400 border-transparent animate-spin" />
+                                <HiSparkles className="absolute inset-0 m-auto text-purple-300 text-xl" />
+                            </div>
+                            <p className="text-purple-200 font-medium text-sm">Analizando datos de musicoterapia...</p>
+                            <p className="text-purple-300/60 text-xs">Procesando {reacciones.length} reacciones + anotaciones del cuidador</p>
+                        </div>
+                    </div>
+                )}
+
+                {/* Estado: sin análisis todavía */}
+                {!generandoIA && !analisisIA && (
+                    <div className="rounded-xl bg-white/5 border border-white/10 p-6 text-center">
+                        <p className="text-4xl mb-3">🤖</p>
+                        <p className="text-white/70 font-medium text-sm">Sin análisis generado aún</p>
+                        <p className="text-white/40 text-xs mt-1">
+                            Haz clic en "Generar Análisis IA" para obtener una evaluación clínica basada en las {reacciones.length} reacciones registradas
+                        </p>
+                    </div>
+                )}
+
+                {/* Resultado del análisis IA */}
+                {!generandoIA && analisisIA && (
+                    <div className="space-y-4">
+                        {/* Puntuación + Tendencia */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                            {/* Puntuación de bienestar */}
+                            <div className="rounded-xl bg-white/5 border border-white/10 p-4">
+                                <p className="text-white/60 text-xs uppercase tracking-wider mb-3">Índice de Bienestar Musical</p>
+                                <div className="flex items-end gap-3">
+                                    <p
+                                        className="text-5xl font-bold"
+                                        style={{ color: getScoreColor(analisisIA.puntuacion) }}
+                                    >
+                                        {analisisIA.puntuacion}
+                                    </p>
+                                    <p className="text-white/40 text-lg pb-1">/100</p>
+                                </div>
+                                {/* Barra */}
+                                <div className="mt-3 h-2 w-full rounded-full bg-white/10 overflow-hidden">
+                                    <div
+                                        className="h-full rounded-full transition-all duration-700"
+                                        style={{
+                                            width: `${analisisIA.puntuacion}%`,
+                                            backgroundColor: getScoreColor(analisisIA.puntuacion),
+                                        }}
+                                    />
+                                </div>
+                                <p className="text-white/40 text-xs mt-2">
+                                    Basado en {analisisIA.totalReaccionesAnalizadas} reacciones
+                                </p>
+                            </div>
+
+                            {/* Tendencia */}
+                            <div className="rounded-xl bg-white/5 border border-white/10 p-4">
+                                <p className="text-white/60 text-xs uppercase tracking-wider mb-3">Tendencia Observada</p>
+                                {(() => {
+                                    const cfg = TENDENCIA_CONFIG[analisisIA.tendencia]
+                                    return (
+                                        <div className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl border ${cfg.bg}`}>
+                                            <span className="text-2xl">{cfg.emoji}</span>
+                                            <span className={`font-bold text-base ${cfg.color}`}>{cfg.label}</span>
+                                        </div>
+                                    )
+                                })()}
+                                {analisisIA.resumenEmocional && (
+                                    <p className="text-white/60 text-xs mt-3 italic">
+                                        {analisisIA.resumenEmocional}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Narrativa clínica */}
+                        <div className="rounded-xl bg-white/5 border border-white/10 p-4">
+                            <p className="text-white/60 text-xs uppercase tracking-wider mb-2">Evaluación Clínica</p>
+                            <p className="text-white/90 text-sm leading-relaxed">{analisisIA.narrativa}</p>
+                        </div>
+
+                        {/* Alertas */}
+                        {analisisIA.alertas.length > 0 && (
+                            <div className="rounded-xl bg-orange-500/10 border border-orange-400/30 p-4">
+                                <p className="text-orange-300 text-xs uppercase tracking-wider font-semibold mb-2">
+                                    ⚠️ Alertas Clínicas
+                                </p>
+                                <ul className="space-y-1">
+                                    {analisisIA.alertas.map((alerta, i) => (
+                                        <li key={i} className="text-orange-200/90 text-sm flex items-start gap-2">
+                                            <span className="mt-0.5 text-orange-400">•</span>
+                                            {alerta}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+
+                        {/* Canciones destacadas */}
+                        {analisisIA.cancionesDestacadas.length > 0 && (
+                            <div className="rounded-xl bg-white/5 border border-white/10 p-4">
+                                <p className="text-white/60 text-xs uppercase tracking-wider mb-2">🎵 Canciones que Generaron Mejor Respuesta</p>
+                                <div className="flex flex-wrap gap-2">
+                                    {analisisIA.cancionesDestacadas.map((cancion, i) => (
+                                        <span
+                                            key={i}
+                                            className="px-3 py-1 rounded-full bg-green-500/20 border border-green-400/30 text-green-200 text-xs font-medium"
+                                        >
+                                            {cancion}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Recomendaciones */}
+                        {analisisIA.recomendaciones.length > 0 && (
+                            <div className="rounded-xl bg-blue-500/10 border border-blue-400/30 p-4">
+                                <p className="text-blue-300 text-xs uppercase tracking-wider font-semibold mb-2">
+                                    💡 Recomendaciones Terapéuticas
+                                </p>
+                                <ol className="space-y-2">
+                                    {analisisIA.recomendaciones.map((rec, i) => (
+                                        <li key={i} className="text-blue-200/90 text-sm flex items-start gap-2">
+                                            <span className="font-bold text-blue-400 flex-shrink-0">{i + 1}.</span>
+                                            {rec}
+                                        </li>
+                                    ))}
+                                </ol>
+                            </div>
+                        )}
+
+                        {/* Pie: fecha de generación */}
+                        <p className="text-white/25 text-xs text-right">
+                            Generado el {new Date(analisisIA.generadoEn).toLocaleString('es-CO', {
+                                day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                            })}
+                        </p>
+                    </div>
+                )}
             </div>
 
             {/* Historial de reacciones */}
