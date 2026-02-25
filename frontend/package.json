@@ -17,6 +17,10 @@
     "test:cuidador": "cypress run --spec 'cypress/e2e/cuidador/**/*.cy.js'",
     "test:medico": "cypress run --spec 'cypress/e2e/medico/**/*.cy.js'",
     "test:integration": "cypress run --spec 'cypress/e2e/integration/**/*.cy.js'",
+    "test:musica": "cypress run --spec 'cypress/e2e/**/*musica*.cy.js'",
+    "test:musica:cuidador": "cypress run --spec 'cypress/e2e/cuidador/musica-management.cy.js'",
+    "test:musica:paciente": "cypress run --spec 'cypress/e2e/paciente/musica-experience.cy.js'",
+    "test:musica:medico": "cypress run --spec 'cypress/e2e/medico/musica-analytics.cy.js'",
     "test:critical": "cypress run --spec 'cypress/e2e/cuidador/upload-photo.cy.js,cypress/e2e/integration/main-flow.cy.js'"
   },
   "dependencies": {
