@@ -1,35 +1,21 @@
 import axios from 'axios';
 
-/**
- * Servicio para analizar transcripciones y textos usando Google Gemini API
- * Detecta patrones cognitivos, coherencia, claridad, y salud mental
- */
-
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_MODEL = 'gemini-flash-latest'; // Alias estable para el modelo Flash más reciente
+const GEMINI_MODEL = 'gemini-flash-latest';
 
-/**
- * Analizar texto usando Vertex AI para detectar patrones cognitivos
- * @param {string} texto - Texto o transcripción a analizar
- * @param {string} contexto - Contexto adicional (ej: "descripción de foto familiar")
- * @returns {Promise<Object>} - Análisis cognitivo
- */
 export const analizarTexto = async (texto, contexto = '') => {
     console.log('🧠 Iniciando análisis cognitivo con Google Gemini...');
     console.log('   - Longitud del texto:', texto?.length || 0, 'caracteres');
     console.log('   - Contexto:', contexto);
 
     try {
-        // Verificar si Gemini API está configurado
         if (!GEMINI_API_KEY) {
             console.warn('⚠️ GEMINI_API_KEY no configurada. Usando análisis por defecto.');
             return generarAnalisisPorDefecto();
         }
 
-        // Construir prompt especializado para análisis cognitivo
         const prompt = construirPromptAnalisis(texto, contexto);
 
-        // Llamar a Google Gemini API
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
 
         const response = await axios.post(url, {
@@ -46,13 +32,10 @@ export const analizarTexto = async (texto, contexto = '') => {
 
         console.log('✅ Análisis completado por Google Gemini');
 
-        // Parsear respuesta
         const responseData = response.data;
         console.log('📦 Respuesta completa de Gemini:', JSON.stringify(responseData, null, 2));
 
         const analisisTexto = response.data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
-
-        // Debug: Mostrar la respuesta raw
         console.log('📄 Respuesta de Gemini:', analisisTexto.substring(0, 500));
 
         const analisis = parsearAnalisis(analisisTexto);
@@ -72,14 +55,10 @@ export const analizarTexto = async (texto, contexto = '') => {
             console.error('   Status:', error.response.status);
             console.error('   Respuesta:', JSON.stringify(error.response.data, null, 2));
         }
-        // Retornar análisis por defecto en caso de error
         return generarAnalisisPorDefecto();
     }
 };
 
-/**
- * Construir prompt especializado para análisis cognitivo
- */
 function construirPromptAnalisis(texto, contexto) {
     return `Analiza este texto de una persona mayor con posible deterioro cognitivo.
 
@@ -108,21 +87,13 @@ Devuelve SOLO un JSON válido con estas métricas (valores 0.0-1.0):
 Responde SOLO con el JSON.`;
 }
 
-/**
- * Parsear respuesta de Vertex AI
- */
 function parsearAnalisis(textoAnalisis) {
     try {
-        // Limpiar el texto para extraer solo el JSON
-        // Buscar el JSON entre ```json y ``` o directamente { ... }
         let jsonText = textoAnalisis;
-
-        // Intentar extraer de bloques de código markdown
         const codeBlockMatch = textoAnalisis.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
         if (codeBlockMatch) {
             jsonText = codeBlockMatch[1];
         } else {
-            // Buscar directamente el objeto JSON
             const jsonMatch = textoAnalisis.match(/\{[\s\S]*\}/);
             if (jsonMatch) {
                 jsonText = jsonMatch[0];
@@ -133,7 +104,6 @@ function parsearAnalisis(textoAnalisis) {
 
         const analisis = JSON.parse(jsonText);
 
-        // Validar y normalizar valores
         const metricas = {
             coherencia: Math.min(Math.max(analisis.coherencia || 0.5, 0), 1),
             claridad: Math.min(Math.max(analisis.claridad || 0.5, 0), 1),
@@ -153,7 +123,6 @@ function parsearAnalisis(textoAnalisis) {
             fechaAnalisis: new Date()
         };
 
-        // Calcular puntuación global
         metricas.puntuacionGlobal = calcularPuntuacionGlobal(metricas);
 
         return metricas;
@@ -164,9 +133,6 @@ function parsearAnalisis(textoAnalisis) {
     return generarAnalisisPorDefecto();
 }
 
-/**
- * Generar análisis por defecto cuando no hay API key o hay error
- */
 function generarAnalisisPorDefecto() {
     const metricas = {
         coherencia: 0.7,
@@ -187,15 +153,11 @@ function generarAnalisisPorDefecto() {
         fechaAnalisis: new Date()
     };
 
-    // Calcular puntuación global
     metricas.puntuacionGlobal = calcularPuntuacionGlobal(metricas);
 
     return metricas;
 }
 
-/**
- * Calcular puntuación cognitiva global (0-100)
- */
 export const calcularPuntuacionGlobal = (analisis) => {
     const pesos = {
         coherencia: 0.20,
@@ -216,9 +178,6 @@ export const calcularPuntuacionGlobal = (analisis) => {
     return Math.round(puntuacion * 100);
 };
 
-/**
- * Detectar desviaciones significativas respecto a línea base
- */
 export const detectarDesviaciones = (analisisActual, lineaBase, umbral = 0.15) => {
     const desviaciones = [];
 
@@ -229,7 +188,6 @@ export const detectarDesviaciones = (analisisActual, lineaBase, umbral = 0.15) =
         const valorBase = lineaBase[metrica] || 0;
         const diferencia = valorBase - valorActual;
 
-        // Detectar solo deterioros significativos
         if (diferencia > umbral) {
             const porcentaje = Math.round((diferencia / valorBase) * 100);
             desviaciones.push({
@@ -246,9 +204,6 @@ export const detectarDesviaciones = (analisisActual, lineaBase, umbral = 0.15) =
     return desviaciones;
 };
 
-/**
- * Generar recomendaciones basadas en el análisis
- */
 export const generarRecomendaciones = (desviaciones) => {
     const recomendaciones = [];
 
